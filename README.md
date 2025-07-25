@@ -1,38 +1,30 @@
 # README.md
 
-# 🔥 Dashboard BI - Analyse des feux de forêts
+# Dashboard BI - Analyse des feux de forêt aux USA
 STREAMLIT : https://fireapp-fhgvxfzp6csdorj5kvdgyp.streamlit.app/
 
-## 📌 Description
+## Description
 
-Tableau de bord interactif développé avec Streamlit pour l'analyse des données des feux de forêts. Cette application propose une visualisation complète et des insights business intelligence sur les tendances, répartitions géographiques et causes des incendies.
+Tableau de bord interactif développé avec Streamlit pour l'analyse des données des feux de forêts aux USA. Cette application propose une visualisation complète et des insights business intelligence sur les tendances, répartitions géographiques et causes des incendies.
 
-## 🚀 Fonctionnalités
+## Dataset
+La base de donnée csv fires a été réduite à 30 000 lignes pour être intégrée dans un streamlit connecté à Github.
 
-### 📊 **Tableau de bord multi-pages**
-- **🏠 Aperçu des données** : KPIs principaux et données brutes
-- **📈 Analyse temporelle** : Évolutions annuelles, saisonnières et mensuelles  
-- **📈 Visualisations BI** : Analyses géographiques, par causes et heatmaps
+## Fonctionnalités
 
-### 🔍 **Filtres interactifs**
-- Sélection par années
-- Filtrage par États
-- Navigation intuitive dans la sidebar
+### **Tableau de bord multi-pages**
+- **Aperçu des données** : KPIs principaux et données brutes
+- **Analyse temporelle** : Évolutions annuelles, saisonnières et mensuelles  
+- **Visualisations BI** : Analyses géographiques et temporelles
 
-### 📏 **Formatage intelligent des surfaces**
-- Affichage automatique adapté à la taille :
-  - < 10,000 m² → mètres carrés
-  - 10,000 - 1M m² → hectares  
-  - > 1M m² → kilomètres carrés
-
-### 📈 **Visualisations avancées**
+### **Visualisations avancées**
 - Graphiques temporels avec Plotly
 - Heatmaps interactives
 - Analyses géographiques par États
 - Distributions par causes d'incendies
 - KPIs et métriques clés
 
-## 🛠️ Installation
+## Installation
 
 ### Prérequis
 - Python 3.8+

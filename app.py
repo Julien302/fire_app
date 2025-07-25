@@ -8,7 +8,7 @@ from utils.preprocessing import load_and_preprocess_data
 
 # Configuration de la page
 st.set_page_config(
-    page_title="🔥 Dashboard BI - Analyse des feux de forêts",
+    page_title="Dashboard BI - Analyse des feux de forêt aux USA",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -34,82 +34,33 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Titre principal
-st.title("🔥 Dashboard BI - Analyse des feux de forêts")
-st.markdown("**Tableau de bord interactif pour l'analyse des données des feux de forêts**")
-
+st.title("**Analyse des feux de forêts aux USA**")
+st.info("L'analyse est effectuée sur un échantillon de données filtrées pour le fonctionnement du dashboard")
 # Fonction de chargement avec cache
 @st.cache_data
 def load_cached_data():
     """Fonction pour charger les données avec cache"""
     return load_and_preprocess_data()
 
-def format_area(area_m2):
-    """Formate l'affichage des surfaces selon leur taille"""
-    if pd.isna(area_m2):
-        return "N/A"
-    
-    if area_m2 >= 1_000_000:  # Plus d'1 million de m² = affichage en km²
-        return f"{area_m2 / 1_000_000:.2f} km²"
-    elif area_m2 >= 10_000:  # Plus de 10 000 m² = affichage en hectares
-        return f"{area_m2 / 10_000:.1f} ha"
-    else:  # Moins de 10 000 m² = affichage en m²
-        return f"{area_m2:,.0f} m²"
-
-def format_area_value(area_m2):
-    """Retourne la valeur numérique formatée pour les calculs"""
-    if pd.isna(area_m2):
-        return 0
-    
-    if area_m2 >= 1_000_000:  # Conversion en km²
-        return area_m2 / 1_000_000
-    elif area_m2 >= 10_000:  # Conversion en hectares
-        return area_m2 / 10_000
-    else:  # Garder en m²
-        return area_m2
-
-def get_area_unit(area_m2):
-    """Retourne l'unité correspondant à la superficie"""
-    if pd.isna(area_m2):
-        return ""
-    
-    if area_m2 >= 1_000_000:
-        return "km²"
-    elif area_m2 >= 10_000:
-        return "ha"
-    else:
-        return "m²"
-
-# Chargement des données avec gestion des erreurs
-try:
-    with st.spinner("Chargement des données en cours..."):
-        df, code_to_name, name_to_code = load_cached_data()
-    
-    if df.empty:
-        st.error("❌ Aucune donnée n'a pu être chargée.")
-        st.stop()
-    else:
-        st.success(f"✅ {len(df):,} enregistrements chargés avec succès")
-
-except Exception as e:
-    st.error(f"❌ Erreur lors du chargement des données : {str(e)}")
-    st.stop()
+# Chargement des données
+df, code_to_name, name_to_code = load_cached_data()
 
 if not df.empty:
     # SIDEBAR - Navigation
-    st.sidebar.title("📋 Navigation")
+    st.sidebar.title("Navigation")
     st.sidebar.markdown("---")
 
     # Menu de sélection
     page = st.sidebar.selectbox(
         "Choisissez une section :",
-        ["🏠 Aperçu des données",
-         "📊 Analyse temporelle", 
-         "📈 Visualisations BI"]
+        ["Aperçu des données",
+         "Analyse temporelle", 
+         "Visualisations BI"]
     )
 
     # Options de filtrage dans la sidebar
     st.sidebar.markdown("---")
-    st.sidebar.subheader("🔍 Filtres")
+    st.sidebar.subheader("Filtres")
 
     # Filtre par années
     if 'FIRE_YEAR' in df.columns:
@@ -136,37 +87,37 @@ if not df.empty:
         if selected_states:
             df_filtered = df_filtered[df_filtered['STATE_NAME'].isin(selected_states)]
 
-    # Bouton de refresh
-    st.sidebar.markdown("---")
-    if st.sidebar.button("🔄 Actualiser les données"):
-        st.cache_data.clear()
-        st.rerun()
+    # Filtre par saisons
+    if 'DISCOVERY_SEASON' in df.columns:
+        seasons = sorted(df['DISCOVERY_SEASON'].unique())
+        selected_seasons = st.sidebar.multiselect(
+            "Saisons :",
+            seasons,
+            default=seasons  # Par défaut, toutes les saisons sont sélectionnées
+        )
+
+        if selected_seasons:
+            df_filtered = df_filtered[df_filtered['DISCOVERY_SEASON'].isin(selected_seasons)]
 
     # Informations dans la sidebar
     st.sidebar.markdown("---")
-    st.sidebar.markdown("**📊 Données actuelles**")
-    st.sidebar.info(f"📄 {len(df_filtered):,} enregistrements")
+    st.sidebar.markdown("**Données actuelles **")
+    st.sidebar.info(f"{len(df_filtered):,} feux sélectionnées")
     if selected_years:
-        st.sidebar.info(f"📅 {len(selected_years)} années sélectionnées")
-    
-    # Information sur le formatage automatique des surfaces
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("**📏 Format des surfaces**")
-    st.sidebar.info("Les surfaces sont automatiquement formatées :\n- < 10,000 m² → m²\n- 10,000 - 1M m² → hectares\n- > 1M m² → km²")
+        st.sidebar.info(f"{len(selected_years)} années sélectionnées")
+    st.sidebar.info(f"Dataset complet : {len(df):,} feux")
 
-    # =========================
     # PAGE 1: APERÇU DES DONNÉES
-    # =========================
-    if page == "🏠 Aperçu des données":
-        st.header("🏠 Aperçu des Données")
+    if page == "Aperçu des données":
+        st.header("Aperçu des Données")
 
-        # KPIs principaux avec format_area
+        # KPIs principaux
         col1, col2, col3, col4 = st.columns(4)
 
         with col1:
             total_fires = len(df_filtered)
             st.metric(
-                label="🔥 Total Incendies",
+                label="Total Incendies",
                 value=f"{total_fires:,}",
                 delta=None
             )
@@ -174,36 +125,36 @@ if not df.empty:
         with col2:
             avg_duration = df_filtered['DURATION_DAYS'].mean() if 'DURATION_DAYS' in df_filtered.columns else 0
             st.metric(
-                label="⏱️ Durée Moyenne",
+                label="Durée Moyenne",
                 value=f"{avg_duration:.1f} jours" if pd.notna(avg_duration) else "N/A"
             )
 
         with col3:
-            # Surface totale avec format_area
-            if 'FIRE_SIZE_M2' in df_filtered.columns:
-                total_area_m2 = df_filtered['FIRE_SIZE_M2'].sum()
+            # Surface totale directement depuis FIRE_SIZE_KM2
+            if 'FIRE_SIZE_KM2' in df_filtered.columns:
+                total_area_km2 = df_filtered['FIRE_SIZE_KM2'].sum()
                 st.metric(
-                    label="🌍 Surface Totale",
-                    value=format_area(total_area_m2)
+                    label="Surface Totale",
+                    value=f"{total_area_km2:.2f} km²" if total_area_km2 > 0 else "N/A"
                 )
             else:
-                st.metric(label="🌍 Surface Totale", value="N/A")
+                st.metric(label="Surface Totale", value="N/A")
 
         with col4:
-            # Taille moyenne avec format_area
-            if 'FIRE_SIZE_M2' in df_filtered.columns:
-                avg_size_m2 = df_filtered['FIRE_SIZE_M2'].mean()
+            # Taille moyenne directement depuis FIRE_SIZE_KM2
+            if 'FIRE_SIZE_KM2' in df_filtered.columns:
+                avg_size_km2 = df_filtered['FIRE_SIZE_KM2'].mean()
                 st.metric(
-                    label="📏 Taille Moyenne",
-                    value=format_area(avg_size_m2)
+                    label="Taille Moyenne",
+                    value=f"{avg_size_km2:.2f} km²" if avg_size_km2 > 0 else "N/A"
                 )
             else:
-                st.metric(label="📏 Taille Moyenne", value="N/A")
+                st.metric(label="Taille Moyenne", value="N/A")
 
         st.markdown("---")
 
         # Tableau de données
-        st.subheader("📋 Données Brutes")
+        st.subheader("Données Brutes")
 
         # Options d'affichage
         col1, col2 = st.columns([1, 3])
@@ -213,7 +164,7 @@ if not df.empty:
         st.dataframe(df_filtered.head(nb_rows), use_container_width=True)
 
         # Informations techniques
-        st.subheader("🔧 Informations Techniques")
+        st.subheader("Informations Techniques")
 
         col1, col2 = st.columns(2)
         with col1:
@@ -224,29 +175,25 @@ if not df.empty:
             st.write("**Types de données :**")
             st.write(dict(df_filtered.dtypes))
 
-    # ================================
     # PAGE 2: ANALYSE TEMPORELLE
-    # ================================
-    elif page == "📊 Analyse temporelle":
-        st.header("📊 Analyse Temporelle")
-        
-        st.info("📏 Les surfaces sont automatiquement formatées selon leur taille pour une meilleure lisibilité")
+    elif page == "Analyse temporelle":
+        st.header("Analyse Temporelle")
 
         # Évolution annuelle
         if 'FIRE_YEAR' in df_filtered.columns:
-            st.subheader("📈 Évolution Annuelle")
+            st.subheader("Évolution Annuelle")
 
             yearly_stats = df_filtered.groupby('FIRE_YEAR').agg({
                 'FIRE_NAME': 'count',
                 'DURATION_DAYS': 'mean',
-                'FIRE_SIZE_M2': ['mean', 'sum'] if 'FIRE_SIZE_M2' in df_filtered.columns else None
+                'FIRE_SIZE_KM2': ['mean', 'sum'] if 'FIRE_SIZE_KM2' in df_filtered.columns else None
             }).reset_index()
 
             # Graphique avec Plotly
             fig = make_subplots(
                 rows=2, cols=2,
                 subplot_titles=('Nombre d\'incendies', 'Durée moyenne (jours)',
-                               'Taille moyenne', 'Surface totale'),
+                               'Taille moyenne (km²)', 'Surface totale (km²)'),
             )
 
             # Nombre d'incendies
@@ -274,31 +221,28 @@ if not df.empty:
                     row=1, col=2
                 )
 
-            # Surface - utilisation de FIRE_SIZE_M2 si disponible
-            size_column = 'FIRE_SIZE_M2' if 'FIRE_SIZE_M2' in df_filtered.columns else 'FIRE_SIZE'
-            
-            if size_column in yearly_stats.columns:
-                # Taille moyenne - on applique format_area pour les labels
-                avg_values = yearly_stats[size_column]['mean']
+            # Taille moyenne
+            if 'FIRE_SIZE_KM2' in yearly_stats.columns:
+                avg_values = yearly_stats['FIRE_SIZE_KM2']['mean']
                 fig.add_trace(
                     go.Scatter(
                         x=yearly_stats['FIRE_YEAR'],
                         y=avg_values,
                         mode='lines+markers',
-                        name='Taille moyenne',
+                        name='Taille moyenne (km²)',
                         line=dict(color='green', width=3)
                     ),
                     row=2, col=1
                 )
 
                 # Surface totale
-                total_values = yearly_stats[size_column]['sum']
+                total_values = yearly_stats['FIRE_SIZE_KM2']['sum']
                 fig.add_trace(
                     go.Scatter(
                         x=yearly_stats['FIRE_YEAR'],
                         y=total_values,
                         mode='lines+markers',
-                        name='Surface totale',
+                        name='Surface totale (km²)',
                         line=dict(color='orange', width=3)
                     ),
                     row=2, col=2
@@ -309,7 +253,7 @@ if not df.empty:
 
         # Analyse saisonnière
         if 'DISCOVERY_SEASON' in df_filtered.columns:
-            st.subheader("🌍 Analyse Saisonnière")
+            st.subheader("Analyse Saisonnière")
 
             col1, col2 = st.columns(2)
 
@@ -335,7 +279,7 @@ if not df.empty:
 
         # Analyse mensuelle
         if 'MONTH' in df_filtered.columns:
-            st.subheader("📅 Analyse Mensuelle")
+            st.subheader("Analyse Mensuelle")
 
             monthly_stats = df_filtered['MONTH'].value_counts().sort_index()
 
@@ -349,25 +293,18 @@ if not df.empty:
             fig_line.update_layout(xaxis_title="Mois", yaxis_title="Nombre d'incendies")
             st.plotly_chart(fig_line, use_container_width=True)
 
-    # ===============================
     # PAGE 3: VISUALISATIONS BI
-    # ===============================
-    elif page == "📈 Visualisations BI":
-        st.header("📈 Visualisations Business Intelligence")
-        
-        st.info("📏 Les surfaces sont automatiquement formatées selon leur taille pour une meilleure lisibilité")
+    elif page == "Visualisations BI":
+        st.header("Visualisations Business Intelligence")
         
         # Analyse par États
         if 'STATE_NAME' in df_filtered.columns:
-            st.subheader("📍 Analyse Géographique")
+            st.subheader("Analyse Géographique")
 
-            # Utiliser toujours FIRE_SIZE_M2 avec format_area
-            size_column = 'FIRE_SIZE_M2' if 'FIRE_SIZE_M2' in df_filtered.columns else 'FIRE_SIZE'
-            
-            if size_column in df_filtered.columns:
+            if 'FIRE_SIZE_KM2' in df_filtered.columns:
                 state_stats = df_filtered.groupby('STATE_NAME').agg({
                     'FIRE_NAME': 'count',
-                    size_column: 'sum'
+                    'FIRE_SIZE_KM2': 'sum'
                 }).reset_index()
                 
                 state_stats.columns = ['STATE_NAME', 'COUNT', 'TOTAL_SIZE']
@@ -388,34 +325,28 @@ if not df.empty:
                     st.plotly_chart(fig_states, use_container_width=True)
 
                 with col2:
-                    # Créer des labels formatés pour les surfaces
-                    state_stats_display = state_stats.copy()
-                    state_stats_display['SIZE_FORMATTED'] = state_stats_display['TOTAL_SIZE'].apply(format_area)
-                    
                     fig_size = px.bar(
-                        state_stats_display,
+                        state_stats,
                         x='TOTAL_SIZE',
                         y='STATE_NAME',
                         orientation='h',
-                        title="Surface brûlée par État",
+                        title="Surface brûlée par État (km²)",
                         color='TOTAL_SIZE',
-                        color_continuous_scale='Oranges',
-                        hover_data={'SIZE_FORMATTED': True}
+                        color_continuous_scale='Oranges'
                     )
-                    fig_size.update_layout(xaxis_title="Surface totale (unité adaptée)")
+                    fig_size.update_layout(xaxis_title="Surface totale (km²)")
                     st.plotly_chart(fig_size, use_container_width=True)
 
-                # Tableau des statistiques avec format_area
-                st.subheader("📊 Détail par État")
+                # Tableau des statistiques
+                st.subheader("Détail par État")
                 display_stats = state_stats.copy()
-                display_stats['Surface Totale'] = display_stats['TOTAL_SIZE'].apply(format_area)
-                display_stats = display_stats[['STATE_NAME', 'COUNT', 'Surface Totale']]
-                display_stats.columns = ['État', 'Nombre d\'incendies', 'Surface Totale']
+                display_stats = display_stats[['STATE_NAME', 'COUNT', 'TOTAL_SIZE']]
+                display_stats.columns = ['État', 'Nombre d\'incendies', 'Surface Totale (km²)']
                 st.dataframe(display_stats, use_container_width=True)
 
         # Analyse par Causes
         if 'STAT_CAUSE_DESCR' in df_filtered.columns:
-            st.subheader("⚡ Analyse par Causes")
+            st.subheader("Analyse par Causes")
 
             cause_stats = df_filtered['STAT_CAUSE_DESCR'].value_counts().head(8)
 
@@ -442,7 +373,7 @@ if not df.empty:
 
         # Heatmap temporelle
         if 'MONTH' in df_filtered.columns and 'FIRE_YEAR' in df_filtered.columns:
-            st.subheader("🔥 Heatmap Temporelle")
+            st.subheader("Heatmap Temporelle")
 
             # Création d'une heatmap mois vs années
             heatmap_data = df_filtered.groupby(['FIRE_YEAR', 'MONTH']).size().unstack(fill_value=0)
@@ -461,34 +392,33 @@ if not df.empty:
 
         # Insights et Recommandations
         st.markdown("---")
-        st.subheader("💡 Insights Automatiques")
+        st.subheader("Indicateurs clés et recommandations")
 
         insights_col1, insights_col2 = st.columns(2)
 
         with insights_col1:
-            st.info("📊 **Insights Clés**")
+            st.info("**Indicateurs**")
             if 'DISCOVERY_SEASON' in df_filtered.columns:
                 peak_season = df_filtered['DISCOVERY_SEASON'].value_counts().index[0]
-                st.write(f"🌡️ Saison critique: **{peak_season}**")
+                st.write(f"• Saison critique: **{peak_season}**")
 
-            if 'STATE_NAME' in df_filtered.columns:
-                top_state = df_filtered['STATE_NAME'].value_counts().index[0]
-                st.write(f"🏆 État le plus touché: **{top_state}**")
+            if 'FIRE_SIZE_KM2' and "STATE_NAME" in df_filtered.columns:
+                top_state = df_filtered.groupby('STATE_NAME')['FIRE_SIZE_KM2'].sum().idxmax()
+                top_area = df_filtered.groupby('STATE_NAME')['FIRE_SIZE_KM2'].sum().max()
+                
+                st.write(f"• État le plus touché : **{top_state}** (Surface totale: {top_area:.2f} km²)")
 
             if 'STAT_CAUSE_DESCR' in df_filtered.columns:
                 top_cause = df_filtered['STAT_CAUSE_DESCR'].value_counts().index[0]
-                st.write(f"⚡ Cause principale: **{top_cause}**")
+                st.write(f"• Cause principale: **{top_cause}**")
 
         with insights_col2:
-            st.warning("🎯 **Recommandations**")
-            st.write("• Renforcer la surveillance en période critique")
-            st.write("• Cibler les efforts dans les zones à risque")
-            st.write("• Campagnes de prévention spécialisées")
+            st.warning("**Recommandations**")
+            st.write("• Renforcer la surveillance des zones à risques pendant l'été")
+            st.write("• Cibler les efforts dans les états les plus touchés")
+            st.write("• Campagnes de prévention spécfiques aux causes principales")
             st.write("• Optimiser les temps de réponse")
 
-else:
-    st.error("❌ Impossible de charger les données. Vérifiez le fichier source.")
-
-# Footer
+# Pied de page
 st.markdown("---")
-st.markdown("**🔥 Dashboard BI Incendies** - fev25_cda_feux_de_forets")
+st.markdown("**Dashboard BI Analyse des feux de forêt aux USA - fev25_cda_feux_de_forets**")
