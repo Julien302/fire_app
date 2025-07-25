@@ -26,6 +26,10 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     # Arrondir à 4 décimales pour une précision correcte
     df['FIRE_SIZE_KM2'] = df['FIRE_SIZE_KM2'].round(4)
 
+    # Conversion des colonnes de date
+    df['DATEGREG_DISCOVERY'] = pd.to_datetime(df['DATEGREG_DISCOVERY'], errors='coerce')
+    df['DATEGREG_CONT'] = pd.to_datetime(df['DATEGREG_CONT'], errors='coerce')
+    
     # Calcul de la durée des incendies
     if all(col in df.columns for col in ['DATEGREG_DISCOVERY', 'DATEGREG_CONT']):
         df['DURATION_DAYS'] = df.apply(
