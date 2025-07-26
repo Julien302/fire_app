@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime
 from typing import Dict, Tuple
 
-file_path = 'data/fires_light.csv'
+file_path = 'data/fires_light_gh.csv'
 
 def load_state_names() -> Dict[str, str]:
     """Charge la correspondance entre codes et noms d'états"""

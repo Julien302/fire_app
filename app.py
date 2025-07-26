@@ -302,13 +302,16 @@ if not df.empty:
             st.subheader("Analyse Géographique")
 
             if 'FIRE_SIZE_KM2' in df_filtered.columns:
-                state_stats = df_filtered.groupby('STATE_NAME').agg({
+                # TOUS les états pour les cartes
+                all_states = df_filtered.groupby(['STATE','STATE_NAME']).agg({
                     'FIRE_NAME': 'count',
                     'FIRE_SIZE_KM2': 'sum'
                 }).reset_index()
+                all_states.columns = ['STATE','STATE_NAME', 'COUNT', 'TOTAL_SIZE']
+                all_states['AVG_SIZE'] = all_states['TOTAL_SIZE'] / all_states['COUNT']
                 
-                state_stats.columns = ['STATE_NAME', 'COUNT', 'TOTAL_SIZE']
-                state_stats = state_stats.sort_values('COUNT', ascending=False).head(10)
+                # TOP 10 pour les graphiques en barres
+                state_stats = all_states.sort_values('COUNT', ascending=False).head(10)
 
                 col1, col2 = st.columns(2)
 
@@ -324,6 +327,7 @@ if not df.empty:
                     )
                     st.plotly_chart(fig_states, use_container_width=True)
 
+                state_stats = all_states.sort_values('TOTAL_SIZE', ascending=False).head(10)
                 with col2:
                     fig_size = px.bar(
                         state_stats,
@@ -337,12 +341,47 @@ if not df.empty:
                     fig_size.update_layout(xaxis_title="Surface totale (km²)")
                     st.plotly_chart(fig_size, use_container_width=True)
 
-                # Tableau des statistiques
-                st.subheader("Détail par État")
-                display_stats = state_stats.copy()
-                display_stats = display_stats[['STATE_NAME', 'COUNT', 'TOTAL_SIZE']]
-                display_stats.columns = ['État', 'Nombre d\'incendies', 'Surface Totale (km²)']
-                st.dataframe(display_stats, use_container_width=True)
+                # Carte choroplèthe avec TOUS les états
+                st.subheader("Cartes des incendies par État")
+                
+                col3, col4 = st.columns(2)
+                
+                with col3:
+                    fig_map_count = px.choropleth(
+                        all_states, 
+                        locations="STATE",
+                        locationmode="USA-states",
+                        color="COUNT",
+                        scope="usa",
+                        color_continuous_scale="Reds",
+                        title="Nombre d'incendies par État",
+                        labels={"COUNT": "Nombre d'incendies"},
+                        hover_name="STATE_NAME"
+                    )
+                    st.plotly_chart(fig_map_count, use_container_width=True)
+
+                with col4:
+                    fig_map_size = px.choropleth(
+                        all_states,
+                        locations="STATE",
+                        locationmode="USA-states",
+                        color="TOTAL_SIZE",
+                        scope="usa",
+                        color_continuous_scale="Oranges",
+                        title="Surface brûlée par État (km²)",
+                        labels={"TOTAL_SIZE": "Surface (km²)"},
+                        hover_name="STATE_NAME"
+                    )
+                    st.plotly_chart(fig_map_size, use_container_width=True)
+
+                # Tableau récapitulatif (TOP 10 par taille)
+                st.subheader("Tableau Récapitulatif - Top 10 par taille")
+                display_stats = state_stats[['STATE_NAME', 'COUNT', 'TOTAL_SIZE', 'AVG_SIZE']].copy()
+                display_stats.columns = ['État', 'Nb Incendies', 'Surface Totale (km²)', 'Taille Moyenne (km²)']
+                display_stats['Surface Totale (km²)'] = display_stats['Surface Totale (km²)'].round(1)
+                display_stats['Taille Moyenne (km²)'] = display_stats['Taille Moyenne (km²)'].round(2)
+                
+                st.dataframe(display_stats, use_container_width=True, hide_index=True)
 
         # Analyse par Causes
         if 'STAT_CAUSE_DESCR' in df_filtered.columns:
@@ -388,6 +427,7 @@ if not df.empty:
                 xaxis_title="Années",
                 yaxis_title="Mois"
             )
+
             st.plotly_chart(fig_heatmap, use_container_width=True)
 
         # Insights et Recommandations
@@ -402,7 +442,7 @@ if not df.empty:
                 peak_season = df_filtered['DISCOVERY_SEASON'].value_counts().index[0]
                 st.write(f"• Saison critique: **{peak_season}**")
 
-            if 'FIRE_SIZE_KM2' and "STATE_NAME" in df_filtered.columns:
+            if 'FIRE_SIZE_KM2' in df_filtered.columns and "STATE_NAME" in df_filtered.columns:
                 top_state = df_filtered.groupby('STATE_NAME')['FIRE_SIZE_KM2'].sum().idxmax()
                 top_area = df_filtered.groupby('STATE_NAME')['FIRE_SIZE_KM2'].sum().max()
                 
@@ -416,8 +456,9 @@ if not df.empty:
             st.warning("**Recommandations**")
             st.write("• Renforcer la surveillance des zones à risques pendant l'été")
             st.write("• Cibler les efforts dans les états les plus touchés")
-            st.write("• Campagnes de prévention spécfiques aux causes principales")
+            st.write("• Campagnes de prévention spécifiques aux causes principales")
             st.write("• Optimiser les temps de réponse")
+
 
 # Pied de page
 st.markdown("---")
